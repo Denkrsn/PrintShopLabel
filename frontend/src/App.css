@@ -24,6 +24,18 @@ body {
   color: #333;
 }
 
+.App-header h1 {
+  margin-bottom: 5px;
+}
+
+.developer-info {
+  font-size: 14px;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
 .container {
   display: flex;
   width: 90%;

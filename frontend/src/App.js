@@ -122,6 +122,7 @@ const App = () => {
     <div className="App">
       <header className="App-header">
         <h1>PrintShopLabel Web</h1>
+        <p className="developer-info">Developed by: Denis Haniewicz for personal use.</p>
         <div className="container">
           <div className="settings">
             <h3>General Settings</h3>
