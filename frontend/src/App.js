@@ -121,8 +121,12 @@ const App = () => {
   return (
     <div className="App">
       <header className="App-header">
+        <div className="logo-container">
+          <img src="/logo.png" alt="ID-Cards Logo" className="logo" />
+        </div>
         <h1>PrintShopLabel Web</h1>
         <p className="developer-info">Developed by: Denis Haniewicz for personal use.</p>
+        
         <div className="container">
           <div className="settings">
             <h3>General Settings</h3>
@@ -195,20 +199,20 @@ const App = () => {
               </>
             )}
 
-            <button onClick={handleGeneratePdf} disabled={!pdfFile || loading} style={{ marginTop: '20px', width: '100%' }}>
+            <button onClick={handleGeneratePdf} disabled={!pdfFile || loading} style={{ marginTop: '20px' }}>
               {loading ? 'Generating...' : 'Generate Final PDF'}
             </button>
           </div>
           <div className="preview">
             <h3>Preview</h3>
             {previewUrl ? (
-              <iframe src={previewUrl} width="100%" height="600px" title="PDF Preview" />
+              <iframe src={previewUrl} width="100%" height="650px" title="PDF Preview" />
             ) : (
               <p>Upload a PDF template to see the preview.</p>
             )}
-            <p style={{fontSize: '12px', color: '#666', marginTop: '10px'}}>
+            <div style={{fontSize: '12px', color: '#888', marginTop: '15px', textAlign: 'center'}}>
               Note: Background PDF is applied only to the final A4 output.
-            </p>
+            </div>
           </div>
         </div>
       </header>
