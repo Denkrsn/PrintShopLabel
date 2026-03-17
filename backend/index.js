@@ -76,7 +76,7 @@ app.post('/generate-preview', upload.fields([
   try {
     const { 
       number, x, y, fontSize, color, font, range,
-      enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
+      enableNumbering, addBleed, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
     } = req.body;
     const pdfFile = req.files['pdfFile'] ? req.files['pdfFile'][0] : null;
     const txtFile = req.files['txtFile'] ? req.files['txtFile'][0] : null;
@@ -148,7 +148,7 @@ app.post('/generate-pdf', upload.fields([
   try {
     const { 
       range, x, y, fontSize, color, font,
-      enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
+      enableNumbering, addBleed, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
     } = req.body;
     const pdfFile = req.files['pdfFile'] ? req.files['pdfFile'][0] : null;
     const txtFile = req.files['txtFile'] ? req.files['txtFile'][0] : null;
@@ -200,6 +200,27 @@ app.post('/generate-pdf', upload.fields([
 
             resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
 
+            // Add bleed if enabled
+            if (addBleed === 'true') {
+              if (row === 0) {
+                // Top row bleed: shift UP by 5mm
+                resultPage.drawPage(embeddedPage, { 
+                  x: posX, 
+                  y: posY + (5 * MM_TO_POINTS), 
+                  width: CARD_WIDTH, 
+                  height: CARD_HEIGHT 
+                });
+              } else if (row === 4) {
+                // Bottom row bleed: shift DOWN by 5mm
+                resultPage.drawPage(embeddedPage, { 
+                  x: posX, 
+                  y: posY - (5 * MM_TO_POINTS), 
+                  width: CARD_WIDTH, 
+                  height: CARD_HEIGHT 
+                });
+              }
+            }
+
             const currentNumText = String(numbers[currentIdx]);
 
             resultPage.drawText(currentNumText, {
@@ -246,6 +267,25 @@ app.post('/generate-pdf', upload.fields([
           const posX = startX + col * (CARD_WIDTH + COLUMN_GAP);
           const posY = startY + (4 - row) * (CARD_HEIGHT + ROW_GAP);
           resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
+
+          // Add bleed if enabled
+          if (addBleed === 'true') {
+            if (row === 0) {
+              resultPage.drawPage(embeddedPage, { 
+                x: posX, 
+                y: posY + (5 * MM_TO_POINTS), 
+                width: CARD_WIDTH, 
+                height: CARD_HEIGHT 
+              });
+            } else if (row === 4) {
+              resultPage.drawPage(embeddedPage, { 
+                x: posX, 
+                y: posY - (5 * MM_TO_POINTS), 
+                width: CARD_WIDTH, 
+                height: CARD_HEIGHT 
+              });
+            }
+          }
         }
       }
     }

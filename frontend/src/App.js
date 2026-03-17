@@ -31,6 +31,9 @@ const App = () => {
   
   // Main toggle for numbering
   const [enableNumbering, setEnableNumbering] = useState(true);
+  
+  // Bleed settings
+  const [addBleed, setAddBleed] = useState(false);
 
   // Barcode settings
   const [showBarcode, setShowBarcode] = useState(false);
@@ -58,6 +61,7 @@ const App = () => {
     
     // Main toggle
     formData.append('enableNumbering', enableNumbering);
+    formData.append('addBleed', addBleed);
 
     // Barcode params
     formData.append('showBarcode', showBarcode);
@@ -75,7 +79,7 @@ const App = () => {
     } catch (error) {
       console.error(error);
     }
-  }, [pdfFile, bgFile, txtFile, range, x, y, fontSize, color, font, enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight]);
+  }, [pdfFile, bgFile, txtFile, range, x, y, fontSize, color, font, enableNumbering, addBleed, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -101,6 +105,7 @@ const App = () => {
 
     // Main toggle
     formData.append('enableNumbering', enableNumbering);
+    formData.append('addBleed', addBleed);
 
     // Barcode params
     formData.append('showBarcode', showBarcode);
@@ -146,6 +151,11 @@ const App = () => {
             <div className="form-row">
               <label>A4 Background (PDF):</label>
               <input type="file" accept="application/pdf" onChange={(e) => setBgFile(e.target.files[0])} />
+            </div>
+
+            <div className="form-row">
+              <label>Add Bleed (Top/Bottom):</label>
+              <input type="checkbox" checked={addBleed} onChange={(e) => setAddBleed(e.target.checked)} />
             </div>
             
             <h3>Numbering & Barcodes</h3>
