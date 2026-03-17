@@ -29,6 +29,9 @@ const App = () => {
   const [color, setColor] = useState('#000000');
   const [font, setFont] = useState(StandardFonts.Helvetica);
   
+  // Main toggle for numbering
+  const [enableNumbering, setEnableNumbering] = useState(true);
+
   // Barcode settings
   const [showBarcode, setShowBarcode] = useState(false);
   const [barcodeX, setBarcodeX] = useState(10);
@@ -53,6 +56,9 @@ const App = () => {
     formData.append('color', color);
     formData.append('font', font);
     
+    // Main toggle
+    formData.append('enableNumbering', enableNumbering);
+
     // Barcode params
     formData.append('showBarcode', showBarcode);
     formData.append('barcodeX', barcodeX);
@@ -69,7 +75,7 @@ const App = () => {
     } catch (error) {
       console.error(error);
     }
-  }, [pdfFile, bgFile, txtFile, range, x, y, fontSize, color, font, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight]);
+  }, [pdfFile, bgFile, txtFile, range, x, y, fontSize, color, font, enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
@@ -92,6 +98,9 @@ const App = () => {
     formData.append('fontSize', fontSize);
     formData.append('color', color);
     formData.append('font', font);
+
+    // Main toggle
+    formData.append('enableNumbering', enableNumbering);
 
     // Barcode params
     formData.append('showBarcode', showBarcode);
@@ -138,64 +147,75 @@ const App = () => {
               <label>A4 Background (PDF):</label>
               <input type="file" accept="application/pdf" onChange={(e) => setBgFile(e.target.files[0])} />
             </div>
-            <div className="form-row">
-              <label>Numbers (TXT):</label>
-              <input type="file" accept=".txt" onChange={(e) => setTxtFile(e.target.files[0])} />
-            </div>
-            {!txtFile && (
-              <div className="form-row">
-                <label>Number Range:</label>
-                <input type="text" value={range} onChange={(e) => setRange(e.target.value)} />
-              </div>
-            )}
             
-            <h3>Text Settings</h3>
+            <h3>Numbering & Barcodes</h3>
             <div className="form-row">
-              <label>X Position (mm):</label>
-              <input type="number" value={x} onChange={(e) => setX(e.target.value)} />
-            </div>
-            <div className="form-row">
-              <label>Y Position (mm):</label>
-              <input type="number" value={y} onChange={(e) => setY(e.target.value)} />
-            </div>
-            <div className="form-row">
-              <label>Font Size (pt):</label>
-              <input type="number" value={fontSize} onChange={(e) => setFontSize(e.target.value)} />
-            </div>
-            <div className="form-row">
-              <label>Color:</label>
-              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-            </div>
-            <div className="form-row">
-              <label>Font:</label>
-              <select value={font} onChange={(e) => setFont(e.target.value)}>
-                {Object.keys(StandardFonts).map(f => <option key={f} value={StandardFonts[f]}>{f}</option>)}
-              </select>
+              <label>Enable Numbering:</label>
+              <input type="checkbox" checked={enableNumbering} onChange={(e) => setEnableNumbering(e.target.checked)} />
             </div>
 
-            <h3>Barcode Settings</h3>
-            <div className="form-row">
-              <label>Show Barcode:</label>
-              <input type="checkbox" checked={showBarcode} onChange={(e) => setShowBarcode(e.target.checked)} />
-            </div>
-            {showBarcode && (
+            {enableNumbering && (
               <>
                 <div className="form-row">
-                  <label>Barcode X (mm):</label>
-                  <input type="number" value={barcodeX} onChange={(e) => setBarcodeX(e.target.value)} />
+                  <label>Numbers (TXT):</label>
+                  <input type="file" accept=".txt" onChange={(e) => setTxtFile(e.target.files[0])} />
+                </div>
+                {!txtFile && (
+                  <div className="form-row">
+                    <label>Number Range:</label>
+                    <input type="text" value={range} onChange={(e) => setRange(e.target.value)} />
+                  </div>
+                )}
+                
+                <h4>Text Settings</h4>
+                <div className="form-row">
+                  <label>X Position (mm):</label>
+                  <input type="number" value={x} onChange={(e) => setX(e.target.value)} />
                 </div>
                 <div className="form-row">
-                  <label>Barcode Y (mm):</label>
-                  <input type="number" value={barcodeY} onChange={(e) => setBarcodeY(e.target.value)} />
+                  <label>Y Position (mm):</label>
+                  <input type="number" value={y} onChange={(e) => setY(e.target.value)} />
                 </div>
                 <div className="form-row">
-                  <label>Barcode Width (mm):</label>
-                  <input type="number" value={barcodeWidth} onChange={(e) => setBarcodeWidth(e.target.value)} />
+                  <label>Font Size (pt):</label>
+                  <input type="number" value={fontSize} onChange={(e) => setFontSize(e.target.value)} />
                 </div>
                 <div className="form-row">
-                  <label>Barcode Height (mm):</label>
-                  <input type="number" value={barcodeHeight} onChange={(e) => setBarcodeHeight(e.target.value)} />
+                  <label>Color:</label>
+                  <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
+                <div className="form-row">
+                  <label>Font:</label>
+                  <select value={font} onChange={(e) => setFont(e.target.value)}>
+                    {Object.keys(StandardFonts).map(f => <option key={f} value={StandardFonts[f]}>{f}</option>)}
+                  </select>
+                </div>
+
+                <h4>Barcode Settings</h4>
+                <div className="form-row">
+                  <label>Show Barcode:</label>
+                  <input type="checkbox" checked={showBarcode} onChange={(e) => setShowBarcode(e.target.checked)} />
+                </div>
+                {showBarcode && (
+                  <>
+                    <div className="form-row">
+                      <label>Barcode X (mm):</label>
+                      <input type="number" value={barcodeX} onChange={(e) => setBarcodeX(e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label>Barcode Y (mm):</label>
+                      <input type="number" value={barcodeY} onChange={(e) => setBarcodeY(e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label>Barcode Width (mm):</label>
+                      <input type="number" value={barcodeWidth} onChange={(e) => setBarcodeWidth(e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label>Barcode Height (mm):</label>
+                      <input type="number" value={barcodeHeight} onChange={(e) => setBarcodeHeight(e.target.value)} />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

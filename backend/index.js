@@ -76,11 +76,10 @@ app.post('/generate-preview', upload.fields([
   try {
     const { 
       number, x, y, fontSize, color, font, range,
-      showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
+      enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
     } = req.body;
     const pdfFile = req.files['pdfFile'] ? req.files['pdfFile'][0] : null;
     const txtFile = req.files['txtFile'] ? req.files['txtFile'][0] : null;
-    const bgFile = req.files['bgFile'] ? req.files['bgFile'][0] : null;
 
     if (!pdfFile) return res.status(400).send('No PDF file uploaded.');
 
@@ -88,44 +87,46 @@ app.post('/generate-preview', upload.fields([
     const doc = await PDFDocument.load(uploadedPdfBytes);
     const [page] = await doc.getPages();
 
-    const fontToUse = await doc.embedFont(font || StandardFonts.Helvetica);
-    const textColor = hexToRgb(color || '#000000');
+    if (enableNumbering === 'true') {
+      const fontToUse = await doc.embedFont(font || StandardFonts.Helvetica);
+      const textColor = hexToRgb(color || '#000000');
 
-    // Determine preview number
-    let previewNum = number;
-    if (!previewNum) {
-      const fileNumbers = parseTxtFile(txtFile ? txtFile.buffer : null);
-      if (fileNumbers && fileNumbers.length > 0) {
-        previewNum = fileNumbers[0];
-      } else {
-        const rangeNumbers = generateRangeNumbers(range);
-        previewNum = rangeNumbers.length > 0 ? rangeNumbers[0] : '00001';
+      // Determine preview number
+      let previewNum = number;
+      if (!previewNum) {
+        const fileNumbers = parseTxtFile(txtFile ? txtFile.buffer : null);
+        if (fileNumbers && fileNumbers.length > 0) {
+          previewNum = fileNumbers[0];
+        } else {
+          const rangeNumbers = generateRangeNumbers(range);
+          previewNum = rangeNumbers.length > 0 ? rangeNumbers[0] : '00001';
+        }
       }
-    }
 
-    // Draw text
-    page.drawText(String(previewNum), {
-      x: parseFloat(x) * MM_TO_POINTS,
-      y: CARD_HEIGHT - parseFloat(y) * MM_TO_POINTS - parseFloat(fontSize) * 0.8,
-      font: fontToUse,
-      size: parseFloat(fontSize),
-      color: rgb(textColor.r, textColor.g, textColor.b),
-    });
+      // Draw text
+      page.drawText(String(previewNum), {
+        x: parseFloat(x) * MM_TO_POINTS,
+        y: CARD_HEIGHT - parseFloat(y) * MM_TO_POINTS - parseFloat(fontSize) * 0.8,
+        font: fontToUse,
+        size: parseFloat(fontSize),
+        color: rgb(textColor.r, textColor.g, textColor.b),
+      });
 
-    // Draw barcode
-    if (showBarcode === 'true') {
-      try {
-        const barcodeBuffer = await generateBarcodeBuffer(previewNum, parseFloat(barcodeWidth), parseFloat(barcodeHeight));
-        const barcodeImage = await doc.embedPng(barcodeBuffer);
-        
-        page.drawImage(barcodeImage, {
-          x: parseFloat(barcodeX) * MM_TO_POINTS,
-          y: CARD_HEIGHT - parseFloat(barcodeY) * MM_TO_POINTS - parseFloat(barcodeHeight) * MM_TO_POINTS,
-          width: parseFloat(barcodeWidth) * MM_TO_POINTS,
-          height: parseFloat(barcodeHeight) * MM_TO_POINTS,
-        });
-      } catch (err) {
-        console.error('Barcode generation error:', err);
+      // Draw barcode
+      if (showBarcode === 'true') {
+        try {
+          const barcodeBuffer = await generateBarcodeBuffer(previewNum, parseFloat(barcodeWidth), parseFloat(barcodeHeight));
+          const barcodeImage = await doc.embedPng(barcodeBuffer);
+          
+          page.drawImage(barcodeImage, {
+            x: parseFloat(barcodeX) * MM_TO_POINTS,
+            y: CARD_HEIGHT - parseFloat(barcodeY) * MM_TO_POINTS - parseFloat(barcodeHeight) * MM_TO_POINTS,
+            width: parseFloat(barcodeWidth) * MM_TO_POINTS,
+            height: parseFloat(barcodeHeight) * MM_TO_POINTS,
+          });
+        } catch (err) {
+          console.error('Barcode generation error:', err);
+        }
       }
     }
 
@@ -147,7 +148,7 @@ app.post('/generate-pdf', upload.fields([
   try {
     const { 
       range, x, y, fontSize, color, font,
-      showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
+      enableNumbering, showBarcode, barcodeX, barcodeY, barcodeWidth, barcodeHeight 
     } = req.body;
     const pdfFile = req.files['pdfFile'] ? req.files['pdfFile'][0] : null;
     const txtFile = req.files['txtFile'] ? req.files['txtFile'][0] : null;
@@ -155,18 +156,8 @@ app.post('/generate-pdf', upload.fields([
 
     if (!pdfFile) return res.status(400).send('No PDF file uploaded.');
 
-    // Get numbers from file or range
-    let numbers = parseTxtFile(txtFile ? txtFile.buffer : null);
-    if (!numbers || numbers.length === 0) {
-      numbers = generateRangeNumbers(range);
-    }
-
-    if (numbers.length === 0) return res.status(400).send('No numbers provided.');
-
-    const uploadedPdfBytes = pdfFile.buffer;
     const resultDoc = await PDFDocument.create();
-    const fontToUse = await resultDoc.embedFont(font || StandardFonts.Helvetica);
-    const textColor = hexToRgb(color || '#000000');
+    const uploadedPdfBytes = pdfFile.buffer;
 
     // Embed background if provided
     let bgEmbeddedPage = null;
@@ -176,20 +167,70 @@ app.post('/generate-pdf', upload.fields([
       bgEmbeddedPage = await resultDoc.embedPage(bgPage);
     }
 
-    let currentIdx = 0;
-
-    while (currentIdx < numbers.length) {
-      const resultPage = resultDoc.addPage([A4_WIDTH, A4_HEIGHT]);
-
-      // Draw background if exists
-      if (bgEmbeddedPage) {
-        resultPage.drawPage(bgEmbeddedPage, {
-          x: 0,
-          y: 0,
-          width: A4_WIDTH,
-          height: A4_HEIGHT,
-        });
+    if (enableNumbering === 'true') {
+      let numbers = parseTxtFile(txtFile ? txtFile.buffer : null);
+      if (!numbers || numbers.length === 0) {
+        numbers = generateRangeNumbers(range);
       }
+      if (numbers.length === 0) return res.status(400).send('No numbers provided.');
+
+      const fontToUse = await resultDoc.embedFont(font || StandardFonts.Helvetica);
+      const textColor = hexToRgb(color || '#000000');
+      let currentIdx = 0;
+
+      while (currentIdx < numbers.length) {
+        const resultPage = resultDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+        if (bgEmbeddedPage) resultPage.drawPage(bgEmbeddedPage, { x: 0, y: 0, width: A4_WIDTH, height: A4_HEIGHT });
+
+        const uploadedDoc = await PDFDocument.load(uploadedPdfBytes);
+        const [uploadedPage] = await uploadedDoc.getPages();
+        const embeddedPage = await resultDoc.embedPage(uploadedPage);
+
+        const totalContentWidth = (CARD_WIDTH * 2) + COLUMN_GAP;
+        const totalContentHeight = (CARD_HEIGHT * 5) + (ROW_GAP * 4);
+        const startX = (A4_WIDTH - totalContentWidth) / 2;
+        const startY = (A4_HEIGHT - totalContentHeight) / 2;
+
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col < 2; col++) {
+            if (currentIdx >= numbers.length) break;
+
+            const posX = startX + col * (CARD_WIDTH + COLUMN_GAP);
+            const posY = startY + (4 - row) * (CARD_HEIGHT + ROW_GAP);
+
+            resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
+
+            const currentNumText = String(numbers[currentIdx]);
+
+            resultPage.drawText(currentNumText, {
+              x: posX + parseFloat(x) * MM_TO_POINTS,
+              y: posY + CARD_HEIGHT - parseFloat(y) * MM_TO_POINTS - parseFloat(fontSize) * 0.8,
+              font: fontToUse,
+              size: parseFloat(fontSize),
+              color: rgb(textColor.r, textColor.g, textColor.b),
+            });
+
+            if (showBarcode === 'true') {
+              try {
+                const barcodeBuffer = await generateBarcodeBuffer(currentNumText, parseFloat(barcodeWidth), parseFloat(barcodeHeight));
+                const barcodeImage = await resultDoc.embedPng(barcodeBuffer);
+                resultPage.drawImage(barcodeImage, {
+                  x: posX + parseFloat(barcodeX) * MM_TO_POINTS,
+                  y: posY + CARD_HEIGHT - parseFloat(barcodeY) * MM_TO_POINTS - parseFloat(barcodeHeight) * MM_TO_POINTS,
+                  width: parseFloat(barcodeWidth) * MM_TO_POINTS,
+                  height: parseFloat(barcodeHeight) * MM_TO_POINTS,
+                });
+              } catch (err) { console.error('Barcode generation error:', err); }
+            }
+            currentIdx++;
+          }
+          if (currentIdx >= numbers.length) break;
+        }
+      }
+    } else {
+      // Logic for no numbering
+      const resultPage = resultDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+      if (bgEmbeddedPage) resultPage.drawPage(bgEmbeddedPage, { x: 0, y: 0, width: A4_WIDTH, height: A4_HEIGHT });
 
       const uploadedDoc = await PDFDocument.load(uploadedPdfBytes);
       const [uploadedPage] = await uploadedDoc.getPages();
@@ -202,44 +243,10 @@ app.post('/generate-pdf', upload.fields([
 
       for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 2; col++) {
-          if (currentIdx >= numbers.length) break;
-
           const posX = startX + col * (CARD_WIDTH + COLUMN_GAP);
           const posY = startY + (4 - row) * (CARD_HEIGHT + ROW_GAP);
-
           resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
-
-          const currentNumText = String(numbers[currentIdx]);
-
-          // Draw text
-          resultPage.drawText(currentNumText, {
-            x: posX + parseFloat(x) * MM_TO_POINTS,
-            y: posY + CARD_HEIGHT - parseFloat(y) * MM_TO_POINTS - parseFloat(fontSize) * 0.8,
-            font: fontToUse,
-            size: parseFloat(fontSize),
-            color: rgb(textColor.r, textColor.g, textColor.b),
-          });
-
-          // Draw barcode
-          if (showBarcode === 'true') {
-            try {
-              const barcodeBuffer = await generateBarcodeBuffer(currentNumText, parseFloat(barcodeWidth), parseFloat(barcodeHeight));
-              const barcodeImage = await resultDoc.embedPng(barcodeBuffer);
-              
-              resultPage.drawImage(barcodeImage, {
-                x: posX + parseFloat(barcodeX) * MM_TO_POINTS,
-                y: posY + CARD_HEIGHT - parseFloat(barcodeY) * MM_TO_POINTS - parseFloat(barcodeHeight) * MM_TO_POINTS,
-                width: parseFloat(barcodeWidth) * MM_TO_POINTS,
-                height: parseFloat(barcodeHeight) * MM_TO_POINTS,
-              });
-            } catch (err) {
-              console.error('Barcode generation error:', err);
-            }
-          }
-
-          currentIdx++;
         }
-        if (currentIdx >= numbers.length) break;
       }
     }
 
