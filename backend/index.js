@@ -198,9 +198,7 @@ app.post('/generate-pdf', upload.fields([
             const posX = startX + col * (CARD_WIDTH + COLUMN_GAP);
             const posY = startY + (4 - row) * (CARD_HEIGHT + ROW_GAP);
 
-            resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
-
-            // Add bleed if enabled
+            // Add bleed if enabled - DRAW BEFORE MAIN ELEMENT to keep it underneath
             if (addBleed === 'true') {
               if (row === 0) {
                 // Top row bleed: shift UP by 5mm
@@ -220,6 +218,8 @@ app.post('/generate-pdf', upload.fields([
                 });
               }
             }
+
+            resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
 
             const currentNumText = String(numbers[currentIdx]);
 
@@ -266,9 +266,8 @@ app.post('/generate-pdf', upload.fields([
         for (let col = 0; col < 2; col++) {
           const posX = startX + col * (CARD_WIDTH + COLUMN_GAP);
           const posY = startY + (4 - row) * (CARD_HEIGHT + ROW_GAP);
-          resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
 
-          // Add bleed if enabled
+          // Add bleed if enabled - DRAW BEFORE MAIN ELEMENT to keep it underneath
           if (addBleed === 'true') {
             if (row === 0) {
               resultPage.drawPage(embeddedPage, { 
@@ -286,6 +285,8 @@ app.post('/generate-pdf', upload.fields([
               });
             }
           }
+
+          resultPage.drawPage(embeddedPage, { x: posX, y: posY, width: CARD_WIDTH, height: CARD_HEIGHT });
         }
       }
     }
